@@ -1,0 +1,38 @@
+name: Compress and Release Geodata
+
+# Настраиваем расписание
+on:
+  schedule:
+    - cron: "0 2 * * *" # Запуск каждый день в 02:00 UTC (05:00 МСК)
+  workflow_dispatch: # Позволяет запускать скрипт вручную по кнопке "Run workflow"
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Выдаем права на создание релиза
+
+    steps:
+      - name: Скачивание оригинальных dat-файлов
+        run: |
+          curl -sL -o geoip.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
+          curl -sL -o geosite.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
+
+      - name: Максимальное сжатие в .gz
+        run: |
+          gzip -9 geoip.dat
+          gzip -9 geosite.dat
+          # На выходе получаются файлы geoip.dat.gz и geosite.dat.gz
+
+      - name: Формирование тега версии (Текущая дата)
+        id: tag
+        run: echo "release_tag=$(date +'%Y%m%d%H%M')" >> $GITHUB_ENV
+
+      - name: Публикация релиза на GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ env.release_tag }}" \
+            --title "Обновление геоданных ${{ env.release_tag }}" \
+            --notes "Автоматическое сжатие правил Loyalsoldier" \
+            geoip.dat.gz geosite.dat.gz
