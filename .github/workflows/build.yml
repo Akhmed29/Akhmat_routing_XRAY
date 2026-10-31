@@ -13,6 +13,9 @@ jobs:
       contents: write # Выдаем права на создание релиза
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4 # КРИТИЧЕСКИ ВАЖНО: без этого шага gh release create не сработает
+
       - name: Скачивание оригинальных dat-файлов
         run: |
           curl -sL -o geoip.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
